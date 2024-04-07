@@ -5,16 +5,12 @@ namespace Castor\User;
 use Castor\Attribute\AsTask;
 use Ramsey\Collection\Collection;
 
-use function Castor\import;
 use function Castor\io;
 
-import('composer://ramsey/collection');
-import(__DIR__);
-
-#[AsTask]
-function test(): void
+#[AsTask(name: 'test_from_import')]
+function test_2(): void
 {
-    $items = ['a', 'b', 'c'];
+    $items = ['1', '2', '3'];
     $collection = new Collection('string', $items);
 
     foreach ($collection as $item) {
