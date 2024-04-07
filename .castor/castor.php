@@ -1,22 +1,78 @@
 <?php
 
+use Castor\Attribute\AsContext;
 use Castor\Attribute\AsTask;
+use Castor\Context;
+use TheoD02\Castor\Docker\CastorDockerContext;
+use TheoD02\Castor\Docker\RunnerTrait;
 
-use function Castor\capture;
+use function Castor\context;
 use function Castor\import;
-use function Castor\io;
 
 import('package://theod02/castor-class-task', source: [
     'url' => 'https://github.com/TheoD02/castor-class-task.git',
     'type' => 'git',
     'reference' => 'main',
 ]);
+import('package://theod02/castor-docker', source: [
+    'url' => 'https://github.com/TheoD02/castor-docker.git',
+    'type' => 'git',
+    'reference' => 'main',
+]);
 import(__DIR__);
 
-#[AsTask(description: 'Welcome to Castor!')]
-function hello(): void
+// Comment from here when running castor without vendor fetched
+#[AsContext]
+function default_context(): Context
 {
-    $currentUser = capture('whoami');
+    return new Context(
+        data: [
+            'docker' => [
+                'default' => new CastorDockerContext(
+                    container: 'UNKNOWN',
+                    serviceName: 'UNKNOWN',
+                    workdir: '/app',
+                )
+            ]
+        ]
+    );
+}
 
-    io()->title(sprintf('Hello %s!', $currentUser));
+class Composer
+{
+    use RunnerTrait {
+        __construct as private __runnerConstruct;
+    }
+
+    public function __construct(
+        Context $context,
+    ) {
+        $this->__runnerConstruct($context);
+    }
+
+    protected function allowRunningUsingDocker(): bool
+    {
+        return true;
+    }
+
+    protected function getBaseCommand(): ?string
+    {
+        return 'composer';
+    }
+
+    public function install(): void
+    {
+        $this->add('install')->runCommand();
+    }
+}
+
+function composer(?Context $context = null): Composer
+{
+    return new Composer($context ?? context());
+}
+
+#[AsTask]
+function install(): void
+{
+    composer()->install();
 }
